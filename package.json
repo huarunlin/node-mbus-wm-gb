@@ -1,0 +1,29 @@
+{
+  "name": "mbus-wm-gb",
+  "version": "1.0.0",
+  "description": "GB Water Meter M-bus Node(N-API)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huarunlin/node-mbus-wm-gb.git"
+  },
+  "keywords": [
+    "mbus-wm-gb"
+  ],
+  "author": "huarun.lin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/huarunlin/node-mbus-wm-gb/issues"
+  },
+  "homepage": "https://github.com/huarunlin/node-mbus-wm-gb#readme",
+  
+  "devDependencies": {
+    "node-gyp": "^3.7.0"
+  },
+  "dependencies": {
+    "node-addon-api": "^1.7.0"
+  }
+}
