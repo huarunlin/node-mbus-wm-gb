@@ -1,10 +1,13 @@
 {
-  "name": "mbus-wm-gb",
-  "version": "1.0.0",
+  "name": "mbus_wm_gb",
+  "version": "0.0.1",
   "description": "GB Water Meter M-bus Node(N-API)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp install",
+    "build": "node-gyp rebuild",
+    "dev": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -19,11 +22,18 @@
     "url": "https://github.com/huarunlin/node-mbus-wm-gb/issues"
   },
   "homepage": "https://github.com/huarunlin/node-mbus-wm-gb#readme",
-  
   "devDependencies": {
-    "node-gyp": "^3.7.0"
+    "node-gyp": "^0.12.0"
   },
   "dependencies": {
-    "node-addon-api": "^1.7.0"
+    "node-addon-api": "^1.7.0",
+    "node-pre-gyp-github": "^1.4.2"
+  },
+  "binary": {
+    "napi_versions": [
+      1,
+      2,
+      3
+    ]
   }
 }
