@@ -7,12 +7,6 @@
 #define CMBUS_SERIAL_NAME_MAX_LEN               256
 
 enum {
-    CMBUS_FLAG_SERIAL_DEVICE = 0,
-    CMBUS_FLAG_SERIAL_BAUDRATE,
-    CMBUS_FLAG_SERIAL_DATABITS,
-    CMBUS_FLAG_SERIAL_STOPBITS,
-    CMBUS_FLAG_SERIAL_PARITY,
-
     CMBUS_FLAG_ADDR,
     CMBUS_FLAG_METERTYPE,
 };
@@ -30,14 +24,14 @@ public:
     
     static napi_value getInt32(napi_env env, napi_callback_info info);
     static napi_value setInt32(napi_env env, napi_callback_info info);
-    static napi_value getString(napi_env env, napi_callback_info info);
-    static napi_value setString(napi_env env, napi_callback_info info);
     static napi_value getBuffer(napi_env env, napi_callback_info info);
     static napi_value setBuffer(napi_env env, napi_callback_info info);
 
     static napi_value connect(napi_env env, napi_callback_info info);
     static napi_value disconnect(napi_env env, napi_callback_info info);
     static napi_value isconnect(napi_env env, napi_callback_info info);
+    static napi_value setbaudrate(napi_env env, napi_callback_info info);
+    static napi_value setformat(napi_env env, napi_callback_info info);
     static napi_value recv(napi_env env, napi_callback_info info);
     static napi_value send(napi_env env, napi_callback_info info);
 private:
@@ -47,11 +41,7 @@ private:
     
     napi_env    _env;
     napi_ref    _wrapper;
-    int32_t     _databits;
-    int32_t     _stopbits;
-    char        _parity;
     mbus_handle _mbus;
-
     mbus_frame  _tx;
     mbus_frame  _rx;
 };

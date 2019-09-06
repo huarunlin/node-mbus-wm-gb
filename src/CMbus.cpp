@@ -12,10 +12,6 @@
 napi_ref CMbus::_constructor;
 
 CMbus::CMbus() {
-    _databits = 8;
-    _stopbits = 1;
-    _parity   = 'e';
-
     _mbus.fd = -1;
     _mbus.open  = mbus_serial_connect;
     _mbus.close = mbus_serial_disconnect;
@@ -23,8 +19,8 @@ CMbus::CMbus() {
     _mbus.recv  = mbus_serial_recv_frame;
     _mbus.data_free  = mbus_serial_data_free;
     mbus_serial_data_init(&_mbus);
-    mbus_serial_set_baudrate(&_mbus, 9600);
-    mbus_serial_set_format(&_mbus, _databits, _stopbits, _parity);
+    mbus_serial_set_baudrate(&_mbus, 2400);
+    mbus_serial_set_format(&_mbus, 8, 1, 'e');
 
     _tx.meter_type = MBUS_DEFAULT_METER_TYPE;
     memset(_tx.addr, 0xAA, MBUS_ADDR_LEN);
@@ -37,18 +33,15 @@ CMbus::~CMbus() {
 
 void CMbus::Init(napi_env *env, napi_value *exports) {
     napi_property_descriptor properties[] = {
-        { "device",   NULL,  NULL,   getString, setString,  0, napi_default, (void*)CMBUS_FLAG_SERIAL_DEVICE },
-        { "baudrate", NULL,  NULL,   getInt32,  setInt32,   0, napi_default, (void*)CMBUS_FLAG_SERIAL_BAUDRATE },
-        { "databits", NULL,  NULL,   getInt32,  setInt32,   0, napi_default, (void*)CMBUS_FLAG_SERIAL_DATABITS },
-        { "stopbits", NULL,  NULL,   getInt32,  setInt32,   0, napi_default, (void*)CMBUS_FLAG_SERIAL_STOPBITS },
-        { "parity",   NULL,  NULL,   getString, setString,  0, napi_default, (void*)CMBUS_FLAG_SERIAL_PARITY },
-        { "addr",     NULL,  NULL,   getBuffer, setBuffer,  0, napi_default, (void*)CMBUS_FLAG_ADDR },
-        { "metertype",NULL,  NULL,   getInt32,  setInt32,   0, napi_default, (void*)CMBUS_FLAG_METERTYPE },
-        { "connect",    NULL,  connect,    NULL, NULL,  0, napi_default, NULL },
-        { "disconnect", NULL,  disconnect, NULL, NULL,  0, napi_default, NULL },
-        { "isConnect",  NULL,  isconnect,  NULL, NULL,  0, napi_default, NULL },
-        { "recv",       NULL,  recv,       NULL, NULL,  0, napi_default, NULL },
-        { "send",      NULL,   send,      NULL, NULL,  0, napi_default, NULL },
+        { "addr",       NULL,       NULL,           getBuffer,  setBuffer,  0,  napi_default,   (void*)CMBUS_FLAG_ADDR },
+        { "metertype",  NULL,       NULL,           getInt32,   setInt32,   0,  napi_default,   (void*)CMBUS_FLAG_METERTYPE },
+        { "setbaudrate",NULL,       setbaudrate,    NULL,       NULL,       0,  napi_default,   NULL },
+        { "setformat",  NULL,       setformat,      NULL,       NULL,       0,  napi_default,   NULL },
+        { "connect",    NULL,       connect,        NULL,       NULL,       0,  napi_default,   NULL },
+        { "disconnect", NULL,       disconnect,     NULL,       NULL,       0,  napi_default,   NULL },
+        { "isConnect",  NULL,       isconnect,      NULL,       NULL,       0,  napi_default,   NULL },
+        { "recv",       NULL,       recv,           NULL,       NULL,       0,  napi_default,   NULL },
+        { "send",       NULL,       send,           NULL,       NULL,       0,  napi_default,   NULL },
     };
 
     napi_value cons;
@@ -132,15 +125,6 @@ napi_value CMbus::getInt32(napi_env env, napi_callback_info info) {
     } 
 
     switch(flag) {
-        case CMBUS_FLAG_SERIAL_BAUDRATE:
-            val = mbus_serial_get_baudrate(&obj->_mbus);
-            break;
-        case CMBUS_FLAG_SERIAL_DATABITS:
-            val = obj->_databits;
-            break;
-        case CMBUS_FLAG_SERIAL_STOPBITS:
-            val = obj->_stopbits;
-            break;
         case CMBUS_FLAG_METERTYPE:
             val = obj->_tx.meter_type;
             break;
@@ -171,16 +155,6 @@ napi_value CMbus::setInt32(napi_env env, napi_callback_info info) {
     }
 
     switch(flag) {
-        case CMBUS_FLAG_SERIAL_BAUDRATE:
-            if (0 != mbus_serial_set_baudrate(&obj->_mbus, val)) 
-                tr_err("setInt32: mbus_serial_set_baudrate error.\r\n");
-            break;
-        case CMBUS_FLAG_SERIAL_DATABITS:
-            obj->_databits = val;
-            break;
-        case CMBUS_FLAG_SERIAL_STOPBITS:
-            obj->_stopbits = val;
-            break;
         case CMBUS_FLAG_METERTYPE:
             if (val < 0 || val > 255) {
                 tr_err("setInt32: Invaild Meter Type.\r\n");
@@ -190,85 +164,6 @@ napi_value CMbus::setInt32(napi_env env, napi_callback_info info) {
             break;
         default:
             tr_err("CMBUS::setInt32: Invaild param flag.\r\n");
-            return NULL;
-    }
-
-    if (CMBUS_FLAG_SERIAL_DATABITS == flag ||  CMBUS_FLAG_SERIAL_STOPBITS == flag) {
-        if (0 != mbus_serial_set_format(&obj->_mbus, obj->_databits, obj->_stopbits, obj->_parity)) 
-            tr_err("setDataBits: mbus_serial_set_format error.\r\n");
-    }
-    return NULL;
-}
-
-napi_value CMbus::getString(napi_env env, napi_callback_info info) {
-    napi_status status;
-    napi_value  ret;
-    CMbus      *obj;
-    int         flag;
-    char       *val;
-    size_t      len = NAPI_AUTO_LENGTH;
-
-    if (!getParm(env, info, &obj, NULL, 0, &flag)) {
-        return NULL;
-    }
-
-    switch(flag) {
-        case CMBUS_FLAG_SERIAL_DEVICE:
-            val = ((mbus_serial_data*)obj->_mbus.auxdata)->device;
-            break;
-        case CMBUS_FLAG_SERIAL_PARITY:
-            val = &obj->_parity;
-            len = 1;
-            break;
-        default:
-            tr_err("CMBUS::getInt32: Invaild param flag.\r\n");
-            break;
-    }
-
-    status = napi_create_string_utf8(env, val, len, &ret);
-    if (status != napi_ok) {
-        tr_err("CMbus::getString: napi_create_string_utf8 error.\r\n");
-        return NULL;
-    }
-    return ret;
-}
-
-napi_value CMbus::setString(napi_env env, napi_callback_info info) {
-    napi_status status;
-    size_t      argc = 1;
-    napi_value  args[1];
-    CMbus*      obj;
-    int         flag;
-    size_t      size;
-    char        val[256];
-
-    if (!getParm(env, info, &obj, args, &argc, &flag)) {
-        return NULL;
-    }
-
-    status = napi_get_value_string_utf8(env, args[0], val, 256 - 1, &size);
-    if (status != napi_ok) {
-        tr_err("CMbus::getString: napi_get_value_string_utf8 error.\r\n");
-        return NULL;
-    }
-    val[size] = 0;
-
-    switch(flag) {
-        case CMBUS_FLAG_SERIAL_DEVICE:
-            if (mbus_serial_set_device(&obj->_mbus, val) != 0) 
-                tr_err("CMbus::getString: mbus_serial_set_device error.\r\n");
-            break;
-        case CMBUS_FLAG_SERIAL_PARITY:
-            if (size != 1) {
-                tr_err("CMbus::getString: Invaild parity lenght.\r\n");
-                return NULL;
-            }
-            obj->_parity = val[0];
-            if (0 != mbus_serial_set_format(&obj->_mbus, obj->_databits, obj->_stopbits, obj->_parity)) 
-                tr_err("CMbus::getString: mbus_serial_set_format error.\r\n");
-            break;
-        default:
-            tr_err("CMbus::getString: Invaild param flag.\r\n");
             return NULL;
     }
     return NULL;
@@ -293,7 +188,7 @@ napi_value CMbus::getBuffer(napi_env env, napi_callback_info info) {
             break;
         default:
             tr_err("CMBUS::getBuffer: Invaild param flag.\r\n");
-            break;
+            return NULL;
     }
 
     status = napi_create_buffer_copy(env, len, val, NULL, &ret);
@@ -338,18 +233,104 @@ napi_value CMbus::setBuffer(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-napi_value CMbus::connect(napi_env env, napi_callback_info info) {
+napi_value CMbus::setbaudrate(napi_env env, napi_callback_info info) {
+    napi_status status;
     napi_value  ret;
-    int32_t     errCode = -1;
+    int32_t     errCode = -1, baudrate;
+    size_t      argc = 1;
+    napi_value  args[1];
     CMbus      *obj;
 
-
-    if (!getParm(env, info, &obj, NULL, 0, NULL)) {
+    if (!getParm(env, info, &obj, args, &argc, NULL)) {
         goto exit;
     } 
 
+    status = napi_get_value_int32(env, args[0], &baudrate);
+    if (status != napi_ok) {
+        tr_err("CMbus::setbaudrate: Invaild param device name.\r\n");
+        goto exit;
+    }
+
+    if (mbus_serial_set_baudrate(&obj->_mbus, baudrate) != 0) {
+        tr_err("CMbus::setbaudrate: set device baudrate failure.\r\n");
+        goto exit;
+    }
+    errCode = 0;
+exit:
+    napi_create_int32(env, errCode, &ret);
+    return ret;
+}
+
+napi_value CMbus::setformat(napi_env env, napi_callback_info info) {
+    napi_status status;
+    napi_value  ret;
+    int32_t     errCode = -1, databits, stopbits;
+    char        parity[2];
+    size_t      argc = 3;
+    napi_value  args[3];
+    CMbus      *obj;
+    size_t      size;
+    
+    if (!getParm(env, info, &obj, args, &argc, NULL)) {
+        goto exit;
+    } 
+
+    status = napi_get_value_int32(env, args[0], &databits);
+    if (status != napi_ok) {
+        tr_err("CMbus::setformat: Invaild param databits.\r\n");
+        goto exit;
+    }
+
+    status = napi_get_value_int32(env, args[1], &stopbits);
+    if (status != napi_ok) {
+        tr_err("CMbus::setformat: Invaild param stopbits.\r\n");
+        goto exit;
+    }
+
+    status = napi_get_value_string_utf8(env, args[2], parity, 2, &size);
+    if (status != napi_ok || size != 1) {
+        tr_err("CMbus::setformat: Invaild param parity.\r\n");
+        return NULL;
+    }
+
+    if (mbus_serial_set_format(&obj->_mbus, databits, stopbits, parity[0]) != 0) {
+        tr_err("CMbus::setformat: setup serial format failure.\r\n");
+        goto exit;
+    }
+    errCode = 0;
+exit:
+    napi_create_int32(env, errCode, &ret);
+    return ret;
+}
+
+napi_value CMbus::connect(napi_env env, napi_callback_info info) {
+    napi_status status;
+    napi_value  ret;
+    int32_t     errCode = -1;
+    size_t      argc = 1;
+    napi_value  args[1];
+    CMbus      *obj;
+    size_t      size;
+    char        device[128];
+
+
+    if (!getParm(env, info, &obj, args, &argc, NULL)) {
+        goto exit;
+    } 
+
+    status = napi_get_value_string_utf8(env, args[0], device, 128, &size);
+    if (status != napi_ok || size <= 0) {
+        tr_err("CMbus::connect: Invaild device name.\r\n");
+        goto exit;
+    }
+    
+    if (mbus_serial_set_device(&obj->_mbus, device) != 0) {
+        tr_err("CMbus::connect: set device failure.\r\n");
+        goto exit;
+    }
+
     if (-1 != obj->_mbus.fd) {
-        //tr_err("CMbus::connect: device is Connected.\r\n");
+        tr_err("CMbus::connect: device is Connected.\r\n");
         goto exit;
     }
 
@@ -374,7 +355,7 @@ napi_value CMbus::disconnect(napi_env env, napi_callback_info info) {
     } 
 
     if (-1 == obj->_mbus.fd) {
-        //tr_err("CMbus::disconnect: device not connect.\r\n");
+        tr_err("CMbus::disconnect: device not connect.\r\n");
         goto exit;
     }
 
