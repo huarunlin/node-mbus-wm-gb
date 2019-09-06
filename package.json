@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp install",
-    "build": "node-gyp rebuild",
-    "dev": "node index.js"
+    "build": "node-pre-gyp rebuild",
+    "install": "node-pre-gyp install --fallback-to-build",
+    "publish": "node-pre-gyp-github publish --release",
+    "package": "node-pre-gyp package",
+    "dev": "node test/test.js"
   },
   "repository": {
     "type": "git",
@@ -23,13 +25,18 @@
   },
   "homepage": "https://github.com/huarunlin/node-mbus-wm-gb#readme",
   "devDependencies": {
-    "node-gyp": "^0.12.0"
+    "node-pre-gyp": "^0.12.0"
   },
   "dependencies": {
     "node-addon-api": "^1.7.0",
     "node-pre-gyp-github": "^1.4.2"
   },
   "binary": {
+    "module_name": "node_mbus_wm_gb",
+    "module_path": "./binding/Release/napi-v{napi_build_version}",
+    "package_name": "napi-v{napi_build_version}-{platform}-{arch}.tar.gz",
+    "host": "https://github.com/huarunlin/node-mbus-wm-gb/releases/download/",
+    "remote_path": "v{version}",
     "napi_versions": [
       1,
       2,

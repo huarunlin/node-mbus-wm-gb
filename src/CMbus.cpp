@@ -89,7 +89,7 @@ napi_value CMbus::structure(napi_env env, napi_callback_info info) {
 
 void CMbus::destructor(napi_env env, void* nativeObject, void*) {
     CMbus* obj = static_cast<CMbus*>(nativeObject);
-    delete obj;
+    if (obj) delete obj;
 }
 
 bool CMbus::getParm(napi_env &env, napi_callback_info &info, CMbus **obj, napi_value *args, size_t *argc, int *flag) {

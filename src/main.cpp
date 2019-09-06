@@ -1,4 +1,4 @@
-#include <napi.h>
+#include <node_api.h>
 #include <stdio.h>
 #include "CMbus.h"
 

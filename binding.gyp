@@ -1,7 +1,7 @@
 {
     "targets": [
         {
-            "target_name": "mbus_wm_gb",
+            "target_name": "<(module_name)",
             "sources": [
                 "src/CMbus.cpp",
                 "src/main.cpp"
@@ -47,7 +47,18 @@
                 }]
             ]
 		},
+        {
+            "target_name": "action_after_build",
+            "type": "none",
+            "dependencies": [ "<(module_name)" ],
+            "copies": [{
+                    "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
+                    "destination": "<(module_path)"
+            }]
+        }
     ],
-    "defines": [],
+    "defines": [
+        "NAPI_VERSION=<(napi_build_version)"
+    ],
     "include_dirs": []
 }

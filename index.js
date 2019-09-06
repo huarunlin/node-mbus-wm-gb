@@ -1,43 +1,6 @@
-const binding = require('./build/Release/mbus_wm_gb.node');
-const obj1 = new binding.Mbus();
+const binary = require('node-pre-gyp');
+const path = require('path');
+const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
+const binding = require(binding_path);
 
-var addr = Buffer.from([0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA]);
-var payload = Buffer.from([0x1F, 0x90, 0x00]);
-
-obj1.metertype = 0x10;
-obj1.addr      = addr;
-console.log("addr: " + obj1.addr.toString('hex'));
-
-if (0 != obj1.setbaudrate(2400)) {
-    console.log("setup serial baudrate failure."); 
-}
-
-if (0 != obj1.setformat(8, 1, 'e')) {
-    console.log("setup serial format failure."); 
-}
-
-if (0 != obj1.connect("COM4")) {
-    console.log("device connect failure."); 
-} 
-
-if (0 == obj1.send(0x01, payload)) {
-    console.log("device send success."); 
-} else {
-    console.log("device send failure."); 
-}
-
-var packet = obj1.recv();
-if (0 == packet.code) {
-    console.log("device recv success."); 
-    console.log("Meter Type: " + packet.metertype); 
-    console.log("Address: " + packet.addr.toString('hex')); 
-    console.log("Control: " + packet.ctrl); 
-    console.log("Payload lenght: " + packet.payload.length); 
-    console.log("Payload: " + packet.payload.toString('hex')); 
-} else {
-    console.log("device recv failure, Code " + packet.code); 
-}
-
-if (0 != obj1.disconnect()) {
-    console.log("device disconnect failure."); 
-} 
+module.exports = binding;
