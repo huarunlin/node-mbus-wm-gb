@@ -1,6 +1,6 @@
 {
   "name": "mbus_wm_gb",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "GB Water Meter M-bus Node(N-API)",
   "main": "index.js",
   "scripts": {
