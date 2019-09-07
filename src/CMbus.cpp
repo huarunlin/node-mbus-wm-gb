@@ -11,17 +11,17 @@
 
 napi_ref CMbus::_constructor;
 
-CMbus::CMbus() {
+CMbus::CMbus() : _env(NULL), _wrapper(NULL) {
     _mbus.fd = -1;
     _mbus.open  = mbus_serial_connect;
     _mbus.close = mbus_serial_disconnect;
     _mbus.send  = mbus_serial_send_frame;
     _mbus.recv  = mbus_serial_recv_frame;
     _mbus.data_free  = mbus_serial_data_free;
+    _mbus.auxdata    = NULL;
     mbus_serial_data_init(&_mbus);
     mbus_serial_set_baudrate(&_mbus, 2400);
     mbus_serial_set_format(&_mbus, 8, 1, 'e');
-
     _tx.meter_type = MBUS_DEFAULT_METER_TYPE;
     memset(_tx.addr, 0xAA, MBUS_ADDR_LEN);
 }
@@ -29,6 +29,7 @@ CMbus::CMbus() {
 CMbus::~CMbus() {
     _mbus.close(&_mbus);
     _mbus.data_free(&_mbus);
+    napi_delete_reference(_env, _wrapper);
 }
 
 void CMbus::Init(napi_env *env, napi_value *exports) {
@@ -55,15 +56,14 @@ napi_value CMbus::structure(napi_env env, napi_callback_info info) {
     napi_value new_target;
     napi_value _this;
 
-    status = napi_get_cb_info(env, info, NULL, NULL, &_this, NULL);
-    if (status != napi_ok) {
-        tr_err("structure: napi_get_cb_info error.\r\n");
-        return NULL;
-    }
-
     napi_get_new_target(env, info, &new_target);
     if (new_target != NULL) {
         // Invoked as constructor: `new CMbus(...)`
+        status = napi_get_cb_info(env, info, NULL, NULL, &_this, NULL);
+        if (status != napi_ok) {
+            tr_err("structure: napi_get_cb_info error.\r\n");
+            return NULL;
+        }
         CMbus* obj = new CMbus();
         obj->_env = env;
         napi_wrap(env, _this, obj, CMbus::destructor, NULL, &obj->_wrapper);
@@ -77,7 +77,6 @@ napi_value CMbus::structure(napi_env env, napi_callback_info info) {
             tr_err("structure: napi_get_reference_value error.\r\n");
             return NULL;
         }
-
         status = napi_new_instance(env, cons, NULL, NULL, &instance);
         if (status != napi_ok) {
             tr_err("structure: napi_new_instance error.\r\n");
@@ -96,11 +95,7 @@ bool CMbus::getParm(napi_env &env, napi_callback_info &info, CMbus **obj, napi_v
     napi_status status;
     napi_value  thisValue;
 
-    if (flag) {
-        status = napi_get_cb_info(env, info, argc, args, &thisValue,  (void**)(flag));
-    } else {
-        status = napi_get_cb_info(env, info, argc, args, &thisValue,  NULL);
-    }
+    status = napi_get_cb_info(env, info, argc, args, &thisValue,  (void**)(flag));
     if (status != napi_ok) {
         tr_err("napi_get_cb_info error.\r\n");
         return false;

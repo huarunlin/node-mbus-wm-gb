@@ -10,7 +10,7 @@ npm install mbus_wm_gb
 # example
 
 ```javascript
-const binding = require('..');
+const binding = require('mbus_wm_gb');
 const obj1 = new binding.Mbus();
 
 var addr = Buffer.from([0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA]);
